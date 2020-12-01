@@ -97,6 +97,9 @@ fun_simulate_data= function(nitem, sample.size, model) {
                 guess = c, 
                 Theta = ability)
  }
+
+  return(dat)
+  
  }
  
 
@@ -108,11 +111,40 @@ fun_simulate_data= function(nitem, sample.size, model) {
 
 ```{r}
 
+fun_model_fit= function(dat) {
+  
+#estimate IRT parameters
 model1PL <- mirt(data=dat, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
 model2PL <- mirt(data=dat, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
-parameters <- as.data.frame(coef(model1PL, simplify=TRUE)$items)
+model3PL <- mirt(data=dat, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
 
-lrtest (model1PL, model2PL)
+#extract fit statistics
+aic1PL = extract.mirt(model1PL, 'AIC')
+bic1PL = extract.mirt(model1PL, 'BIC')
+Gsq_1PL = extract.mirt(model1PL, 'G2')
+parameters= cbind("model"=c("1PL"), "AIC"=round(aic1PL,3), "BIC"=round(bic1PL,3), "G-sq"=round(Gsq_1PL,3))
+
+aic2PL = extract.mirt(model2PL, 'AIC')
+bic2PL = extract.mirt(model2PL, 'BIC')
+Gsq_2PL = extract.mirt(model2PL, 'G2')
+
+parameters1= cbind("model"=c("2PL"), "AIC"=round(aic2PL,3), "BIC"=round(bic2PL,3), "G-sq"=round(Gsq_2PL,3))
+
+aic3PL = extract.mirt(model3PL, 'AIC')
+bic3PL = extract.mirt(model3PL, 'BIC')
+Gsq_3PL = extract.mirt(model3PL, 'G2')
+parameters2= cbind("model"=c("3PL"), "AIC"=round(aic3PL,3), "BIC"=round(bic3PL,3), "G-sq"=round(Gsq_3PL,3))
+
+#combine fit statistics
+parameters=rbind(parameters, parameters1, parameters2)
+
+return(parameters)
+}
+
+
+#parameters <- as.data.frame(coef(model1PL, simplify=TRUE)$items)
+
+
 
 ```
 
@@ -125,17 +157,14 @@ lrtest (model1PL, model2PL)
 ## Calling functions
 
 ```{r}
-# Generate a 1PL dataset
+# Generate datasets similar to Kang Cohen
+## Study 1 -  Block 4 has 21 multiple choice items, 1000 students. the paper said 3PM was the best fit, so generating data using 3PM
+data_block4 =  fun_simulate_data(21, 1000, "3PL")
 
 
-# Estimate parameters 
-## using 1PL
-
-
-
-## using 2PL
-
-
+# Estimate model fit 
+fit_statistics = fun_model_fit(data_block4)
+## 3PL gives the best fit
 ```
 
 
