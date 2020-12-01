@@ -26,30 +26,28 @@ library(psych)
 library(mirt)
 
 
-install.packages("lmtest")
+#install.packages("lmtest")
 library(lmtest)
 ```
 
 
 ## Objectives
-1. Simulate a response dataset, using 1PL, 2 PL and 3PL
+*1. Simulate a response dataset, using 1PL, 2 PL and 3PL*
 
-2. Estimate each model and check for fit:
-a. Estimate item parameters using MLE for 1PL, 2PL and 3PL models
-b. Compare model fit using LR (nested models), AIC and BIC (not nested)
+*2. Estimate each model and check for fit :*
+a. Estimate item parameters using mirt for 1PL, 2PL and 3PL models
+b. Compare model fit using LR (nested models), AIC and BIC (not nested) - (using statistics from MIRT)
 
-###     I am not sure about how to do this part
-3. Estimate model and check for fit using Bayesian methods 
-a. Estimate item parameters using Bayesian parameter estimates
-b. Compare model fit using cross-validation log likelihood (CVLL) and Deviance Information Criterion (DIC)
+####     I am not sure about how to do this part
+c. Estimate item parameters using Bayesian parameter estimates
+d. Compare model fit using cross-validation log likelihood (CVLL) and Deviance Information Criterion (DIC)
+
+#### Have to do this part
+*3. Prediction following Ben's work
 
 
+### Simulate dataset
 
-
-#Simulate dataset
-
-#Kang and Cohen dataset sizes
-## Study 1: 21 + 15 = 35 questions
 
 ```{r}
 
@@ -106,7 +104,7 @@ fun_simulate_data= function(nitem, sample.size, model) {
 ```
 
 
-## Extract item parameters using different models
+### Extract item parameters using different models
 
 
 ```{r}
@@ -154,7 +152,7 @@ return(parameters)
  
  
  
-## Calling functions
+### Calling functions
 
 ```{r}
 # Generate datasets similar to Kang Cohen
@@ -164,6 +162,7 @@ data_block4 =  fun_simulate_data(21, 1000, "3PL")
 
 # Estimate model fit 
 fit_statistics = fun_model_fit(data_block4)
+fit_statistics
 ## 3PL gives the best fit
 ```
 
