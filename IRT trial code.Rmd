@@ -102,7 +102,7 @@ fun_simulate_data= function(nitem, sample.size, model) {
 
 ```
 
-# Separate 
+# Separate data generation into three functions - one each for 1PL, 2PL and 3 PL
 
 ```{r}
 fun_simulate_1PL= function(nitem, sample.size, a, b, ability) {
@@ -152,18 +152,21 @@ Gsq_1PL = extract.mirt(model1PL, 'G2')
 loglik_1PL=extract.mirt(model1PL, "logLik")
 
 
-parameters= cbind("model"=c("1PL"), "AIC"=round(aic1PL,3), "BIC"=round(bic1PL,3), "G-sq"=round(Gsq_1PL,3))
+parameters= cbind("model"=c("1PL"), "AIC"=round(aic1PL,3), "BIC"=round(bic1PL,3), "G-sq"=round(Gsq_1PL,3), "LL"=round(loglik_1PL, 3))
 
 aic2PL = extract.mirt(model2PL, 'AIC')
 bic2PL = extract.mirt(model2PL, 'BIC')
 Gsq_2PL = extract.mirt(model2PL, 'G2')
+loglik_2PL=extract.mirt(model2PL, "logLik")
 
-parameters1= cbind("model"=c("2PL"), "AIC"=round(aic2PL,3), "BIC"=round(bic2PL,3), "G-sq"=round(Gsq_2PL,3))
+parameters1= cbind("model"=c("2PL"), "AIC"=round(aic2PL,3), "BIC"=round(bic2PL,3), "G-sq"=round(Gsq_2PL,3), "LL"=round(loglik_2PL, 3))
 
 aic3PL = extract.mirt(model3PL, 'AIC')
 bic3PL = extract.mirt(model3PL, 'BIC')
 Gsq_3PL = extract.mirt(model3PL, 'G2')
-parameters2= cbind("model"=c("3PL"), "AIC"=round(aic3PL,3), "BIC"=round(bic3PL,3), "G-sq"=round(Gsq_3PL,3))
+loglik_3PL=extract.mirt(model3PL, "logLik")
+
+parameters2= cbind("model"=c("3PL"), "AIC"=round(aic3PL,3), "BIC"=round(bic3PL,3), "G-sq"=round(Gsq_3PL,3), "LL"=round(loglik_3PL, 3))
 
 #combine fit statistics
 parameters=rbind(parameters, parameters1, parameters2)
@@ -181,7 +184,7 @@ return(parameters)
  
  
  
-### Calling functions
+### Calling functions - Study 1
 
 ```{r}
 # Generate datasets similar to Kang Cohen
@@ -210,45 +213,24 @@ fit_statistics
 ```
 
 
-## Study 2 - Simulation Study Comparing Model Selection Indices
-
-```{r}
-#Estimate IRT parameters - 1PL
-fun_est_param= function(dat_1PL) {
-
-model1PL <- mirt(data=dat_1PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
-coef = as.data.frame(coef(model1PL, simplify=T)$items[,2]) %>%
-  tibble::rownames_to_column(., "Item no") %>%
-  mutate("b_orig"= b) %>%
-  rename(b_est= "coef(model1PL, simplify = T)$items[, 2]")
-
-return(coef)
-}
 
 
-fun_est_param= function(dat_2PL) {
+### Simulate and fit data, and compare RSME and correlation (Table 5)
+Steps followed in this section:
 
-model2PL <-  mirt(data=dat_2PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
-b= coef(model2PL, simplify=T)$items[,2]
-a=coef(model2PL, simplify=T)$items[,1]
+1. Taken the case for number of items as 20 and sample size as 500
 
+2. Generate parameters (a, d, c). 
 
+3. Using parameters, generate 1PL, 2 PL and 3 PL datasets. 
 
-  tibble::rownames_to_column(., "Item no") %>%
-  mutate("b_orig"= b) %>%
-  rename(b_est= "coef(model1PL, simplify = T)$items[, 2]")
+4. Estimate parameters for each of the datasets, using the correct model (i.e. estimate b for 1PL, a&b for 2PL and a&b&c for 3PL). Estimated parameters are names a_est, b_est, c_est
 
-return(coef)
-}
+5. Compare estimations using RSME
 
-
-
-
-```
-
-
-
-
+#### Issue faced - 
+1. The paper said that 1PL always performs better according to RSME, but for me, 2PL performs better
+2. The paper mentioned mean-mean linking - "Before calculating RMSEs, the estimated parameters were linked to the generating parameter scale using the mean-mean procedure (pg 7)". I am not sure what this means
 
 
 ```{r}
@@ -304,35 +286,63 @@ rsme_b_2PL = sqrt(mean((coef_2PL$b - coef_2PL$b_est)^2))
 rsme_a_2PL = sqrt(mean((coef_2PL$a - coef_2PL$a_est)^2))
 rsme_b_3PL = sqrt(mean((coef_3PL$b - coef_3PL$b_est)^2))
 
-# Compare model fit
 
+# Compare model fit
+rsme
+rsme_b_2PL
+rsme_b_3PL
+
+## rsme is lowest for 2PL
 
 ```
 
 
 
-# Compare model
+# Compare models (Table 9)
+## This replication is onlu
 
 ```{r}
 # Iterate for 50 loops to see which model fits best
+# Data generated using 1PL, low ability
+
+iter=50
+
+nitem=20
+sample.size=500
+
+a <- as.matrix(round(rlnorm(nitem, meanlog = 0, sdlog = 0.5),3), ncol=1) #lognormal
+b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
+c <- as.matrix(round(rbeta(nitem, shape1 = 5, shape2 = 17),3), ncol=1) #beta
+low_ability <- as.matrix(round(rnorm(sample.size, mean = -1, sd = 1),3), ncol=1) #normal
+med_ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
+high_ability <- as.matrix(round(rnorm(sample.size, mean = 1, sd = 1),3), ncol=1) #normal
 
 
-# Generate datasets, low ability
+bestfit_1PL= data.frame(iteration=1:50, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
+
+
+	for (i in 1:iter){
+
+	  # Generate datasets, low ability
 dat_1PL= fun_simulate_1PL(nitem, sample.size,  a, b, low_ability)
 dat_2PL= fun_simulate_2PL(nitem, sample.size,  a, b, low_ability)
 dat_3PL= fun_simulate_3PL(nitem, sample.size,  a, b, c, low_ability)
 
+
 #Estimate
 model1PL <- mirt(data=dat_1PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
-model2PL <- mirt(data=dat_1PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
-model3PL <- mirt(data=dat_1PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
+model2PL <- mirt(data=dat_2PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
+model3PL <- mirt(data=dat_3PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
 
-compare = fun_model_fit(model1PL, model2PL, model3PL)
+compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
+
+if((which.min(compare$AIC))==1) {
+  bestfit_1PL[i,2]=1
+}
+}
 
 #Track which model fits best
 
-	for (i in 1:iter){
-	  
 	}
 
 
