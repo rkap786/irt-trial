@@ -435,7 +435,6 @@ fun_simulate_data= function(nitem, sample.size, model) {
   a &lt;- as.matrix(round(rlnorm(nitem, meanlog = 0, sdlog = 1),3), ncol=1) #lognormal
   b &lt;- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
   c &lt;- as.matrix(round(rbeta(nitem, shape1 = 5, shape2 = 17),3), ncol=1) #beta
- 
   ability &lt;- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
 
  #Simulate response data 
@@ -483,6 +482,9 @@ model3PL &lt;- mirt(data=dat, 1, itemtype=&#39;3PL&#39;, SE=TRUE, verbose=FALSE)
 aic1PL = extract.mirt(model1PL, &#39;AIC&#39;)
 bic1PL = extract.mirt(model1PL, &#39;BIC&#39;)
 Gsq_1PL = extract.mirt(model1PL, &#39;G2&#39;)
+loglik_1PL=extract.mirt(model1PL, &quot;logLik&quot;)
+
+
 parameters= cbind(&quot;model&quot;=c(&quot;1PL&quot;), &quot;AIC&quot;=round(aic1PL,3), &quot;BIC&quot;=round(bic1PL,3), &quot;G-sq&quot;=round(Gsq_1PL,3))
 
 aic2PL = extract.mirt(model2PL, &#39;AIC&#39;)
