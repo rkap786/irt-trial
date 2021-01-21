@@ -5,6 +5,13 @@ date: "11/29/2020"
 output: github_document
 ---
 
+```{r}
+#HTML file with output details is here:
+# https://rpubs.com/rkap786/701341
+
+```
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
