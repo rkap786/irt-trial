@@ -2,7 +2,7 @@
 title: "IRT trial code"
 author: "radhika"
 date: "11/29/2020"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -38,8 +38,11 @@ library(lmtest)
 *2. Estimate each model and check for fit :*
 a. Estimate item parameters using mirt for 1PL, 2PL and 3PL models
 b. Compare model fit using LR (nested models), AIC and BIC (not nested) - (using statistics from MIRT)
+c. Estimate RSME for data generation and estimation for 1PL, 2PL and 3PL - *I can't replicate results from paper here*
+d. Run 50 simulations to see which model gives the best item parametrics
 
-####     I am not sure about how to do this part
+
+####     Not doing this part
 c. Estimate item parameters using Bayesian parameter estimates
 d. Compare model fit using cross-validation log likelihood (CVLL) and Deviance Information Criterion (DIC)
 
@@ -61,19 +64,13 @@ d. Compare model fit using cross-validation log likelihood (CVLL) and Deviance I
 
 ##function to generate dataset
  
-fun_simulate_data= function(nitem, sample.size, model) {
-  a <- as.matrix(round(rlnorm(nitem, meanlog = 0, sdlog = 1),3), ncol=1) #lognormal
-  b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
-  c <- as.matrix(round(rbeta(nitem, shape1 = 5, shape2 = 17),3), ncol=1) #beta
-  ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
-
+fun_simulate_data= function(nitem, sample.size, model,a, b,c, ability) {
  #Simulate response data 
  	if (model == "1PL"){
  dat <- simdata(a = a, 
                 d = b, 
                 N = sample.size, 
-                itemtype = 'dich', 
-                guess = c, 
+                itemtype = '2PL', 
                 Theta = ability)
  	}
  
@@ -82,7 +79,6 @@ fun_simulate_data= function(nitem, sample.size, model) {
                 d = b, 
                 N = sample.size, 
                 itemtype = '2PL', 
-                guess = c, 
                 Theta = ability)
  }
  
@@ -103,37 +99,39 @@ fun_simulate_data= function(nitem, sample.size, model) {
 ```
 
 # Separate data generation into three functions - one each for 1PL, 2PL and 3 PL
+Tried this out but didn't end up using it, it didnt change the results
 
 ```{r}
-fun_simulate_1PL= function(nitem, sample.size, a, b, ability) {
-  dat <- simdata(a = a, 
-                d = b, 
-                N = sample.size, 
-                itemtype = 'dich', 
-                Theta = ability)
-  return(dat)
-  }
-
-
-fun_simulate_2PL= function(nitem, sample.size, a, b, ability) {
-  dat <- simdata(a = a, 
-                d = b, 
-                N = sample.size, 
-                itemtype = '2PL', 
-                guess = c, 
-                Theta = ability)
-  return(dat)
-}
-
-fun_simulate_3PL= function(nitem, sample.size, a, b, c, ability) {
-  dat <- simdata(a = a, 
-                d = b, 
-                N = sample.size, 
-                itemtype = '3PL', 
-                guess = c, 
-                Theta = ability)
-  return(dat)
-}
+# fun_simulate_1PL= function(nitem, sample.size, a, b, c, ability) {
+#   dat <- simdata(a = a, 
+#                 d = b, 
+#                 N = sample.size, 
+#                 itemtype = 'dich', 
+#                 guess = c
+#                 Theta = ability)
+#   return(dat)
+#   }
+# 
+# 
+# fun_simulate_2PL= function(nitem, sample.size, a, b, ability) {
+#   dat <- simdata(a = a, 
+#                 d = b, 
+#                 N = sample.size, 
+#                 itemtype = '2PL', 
+#                 guess = c, 
+#                 Theta = ability)
+#   return(dat)
+# }
+# 
+# fun_simulate_3PL= function(nitem, sample.size, a, b, c, ability) {
+#   dat <- simdata(a = a, 
+#                 d = b, 
+#                 N = sample.size, 
+#                 itemtype = '3PL', 
+#                 guess = c, 
+#                 Theta = ability)
+#   return(dat)
+#}
 ```
 
 
@@ -186,10 +184,20 @@ return(parameters)
  
 ### Calling functions - Study 1
 
+For data generated from 3 PL- AIC and G-squared finds 3PL to be the best fit, and BIC finds 2PL to be the best fit
+
 ```{r}
 # Generate datasets similar to Kang Cohen
 ## Study 1 -  Block 4 has 21 multiple choice items, 1000 students. the paper said 3PM was the best fit, so generating data using 3PM
-data_block4 =  fun_simulate_data(21, 1000, "3PL")
+
+nitem= 21
+sample.size=1000
+a <- as.matrix(round(rlnorm(nitem, meanlog = 0, sdlog = 1),3), ncol=1) #lognormal
+  b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
+  c <- as.matrix(round(rbeta(nitem, shape1 = 5, shape2 = 17),3), ncol=1) #beta
+  ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
+
+dat = fun_simulate_data(21, 1000, "3PL",a, b,c,ability)
 
 
 # Estimate model fit 
@@ -232,8 +240,9 @@ Steps followed in this section:
 1. The paper said that 1PL always performs better according to RSME, but for me, 2PL performs better
 2. The paper mentioned mean-mean linking - "Before calculating RMSEs, the estimated parameters were linked to the generating parameter scale using the mean-mean procedure (pg 7)". I am not sure what this means
 
+##### please note - sd for a is 0.5, in accordance with Kang & Cohen?
 
-```{r}
+```{r warning=FALSE}
 # Simulate data for Study 2
 
 ## Test length = 20 items, sample size = 500
@@ -241,28 +250,37 @@ Steps followed in this section:
 ## 3 distributions of ability: N(-1,1) = low ability, N(0,1) = ability at item difficulty level and N(1,1) = high ability
 
 nitem=20
-sample.size=500
+sample.size=1000
 
-a <- as.matrix(round(rlnorm(nitem, meanlog = 0, sdlog = 0.5),3), ncol=1) #lognormal
-b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
-c <- as.matrix(round(rbeta(nitem, shape1 = 5, shape2 = 17),3), ncol=1) #beta
-low_ability <- as.matrix(round(rnorm(sample.size, mean = -1, sd = 1),3), ncol=1) #normal
-med_ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
-high_ability <- as.matrix(round(rnorm(sample.size, mean = 1, sd = 1),3), ncol=1) #normal
+a <- as.matrix(round(rlnorm(20, meanlog = 0, sdlog = 0.5),3), ncol=1) #lognormal
+a1<- matrix(rep( 1, len=20), ncol = 1)
+b <- as.matrix(round(rnorm(20, mean = 0, sd = 1),3), ncol=1) #normal
+c <- as.matrix(round(rbeta(20, shape1 = 5, shape2 = 17),3), ncol=1) #beta
+c1<- matrix(rep( 0, len=20), ncol = 1)
+
+
+low_ability <- as.matrix(round(rnorm(1000, mean = -1, sd = 1),3), ncol=1) #normal
+med_ability <- as.matrix(round(rnorm(1000, mean = 0, sd = 1),3), ncol=1) #normal
+high_ability <- as.matrix(round(rnorm(1000, mean = 1, sd = 1),3), ncol=1) #normal
 
 # Generate datasets, low ability
-dat_1PL= fun_simulate_1PL(nitem, sample.size,  a, b, low_ability)
-dat_2PL= fun_simulate_2PL(nitem, sample.size,  a, b, low_ability)
-dat_3PL= fun_simulate_3PL(nitem, sample.size,  a, b, c, low_ability)
+#dat_1PL= fun_simulate_1PL(nitem, sample.size,  a, b, low_ability)
+#dat_2PL= fun_simulate_2PL(nitem, sample.size,  a, b, low_ability)
+#dat_3PL= fun_simulate_3PL(nitem, sample.size,  a, b, c, low_ability)
+
+dat_1PL = fun_simulate_data(20, 1000, "1PL", a1, b,c1, med_ability)
+dat_2PL = fun_simulate_data(20, 1000, "2PL", a, b,c1, med_ability)
+dat_3PL = fun_simulate_data(20, 1000, "3PL", a, b,c, med_ability)
 
 # estimate IRT parameters
 ## estimate parameters for 1PL
-model1PL <- mirt(data=dat_1PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
+model1PL <- mirt(data=dat_1PL, 1,itemtype='Rasch', SE=FALSE, verbose=FALSE)
 coef = as.data.frame(coef(model1PL, simplify=T)$items[,2]) %>%
   tibble::rownames_to_column(., "Item no") %>%
-  mutate("b_orig"= b) %>%
+  mutate("b"= b) %>%
   rename(b_est= "coef(model1PL, simplify = T)$items[, 2]")
 
+plot(coef$b,coef$b_est)
 
 ## estimate parameters for 2PL
 model2PL <- mirt(data=dat_2PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
@@ -271,26 +289,54 @@ a_est=coef(model2PL, simplify=T)$items[,1]
 coef_2PL = data.frame(b_est, b,  a_est, a) 
 coef_2PL = tibble::rownames_to_column(coef_2PL, "Item no")
 
+plot(coef_2PL$b,coef_2PL$b_est)
 
 ## estimate parameters for 3PL
 model3PL <- mirt(data=dat_3PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
+
 b_est= coef(model3PL, simplify=T)$items[,2]
 a_est=coef(model3PL, simplify=T)$items[,1]
 c_est=coef(model3PL, simplify=T)$items[,3]
 coef_3PL = data.frame(b_est, b,  a_est, a, c_est, c) 
 
+plot(coef_3PL$b,coef_3PL$b_est)
+
+## Plot original and estimates
+coef_3PL %>% 
+  ggplot(aes(x=b,y=b_est)) +geom_point()
+
+coef_2PL %>% 
+  ggplot(aes(x=b,y=b_est)) +geom_point()
+
+coef %>% 
+  ggplot(aes(x=b,y=b_est)) +geom_point()
+
 
 # Estimate RSME 
-rsme = sqrt(mean((coef$b_orig - coef$b_est)^2))
+rsme = sqrt(mean((coef$b - coef$b_est)^2))
 rsme_b_2PL = sqrt(mean((coef_2PL$b - coef_2PL$b_est)^2))
 rsme_a_2PL = sqrt(mean((coef_2PL$a - coef_2PL$a_est)^2))
 rsme_b_3PL = sqrt(mean((coef_3PL$b - coef_3PL$b_est)^2))
+rsme_a_3PL = sqrt(mean((coef_3PL$a - coef_3PL$a_est)^2))
 
 
-# Compare model fit
+# Estimate correlation 
+## Paper says product moment correlation, I think this is Pearson?
+### All highly correlated (>.9) and significant
+cor.test(coef$b, coef$b_est, method="pearson",alternative="two.sided",na.action)
+cor.test(coef_2PL$b, coef_2PL$b_est, method="pearson",alternative="two.sided",na.action)
+cor.test(coef_3PL$b, coef_3PL$b_est, method="pearson",alternative="two.sided",na.action)
+
+
+
+# Compare model fit - b
 rsme
 rsme_b_2PL
 rsme_b_3PL
+
+# Compare model fit - a
+rsme_a_2PL
+rsme_a_3PL
 
 ## rsme is lowest for 2PL
 
@@ -298,80 +344,206 @@ rsme_b_3PL
 
 
 
-# Compare models (Table 9)
-## This replication is onlu
+### Compare models (Table 9)
 
-```{r}
+This replication is only conducted for the case of low ability, 20 items, 500 sample size i.e. the first 3 rows of Table 9. The tests explored are AIC, BIC, Log likelihood and G-squared.
+
+#### Points of doubt:
+
+1. I generate parameters (a,b,c) only once. Using this, data is generated. Using generated datasets, parameters are estimated for 50 iterations, and we see which model performed best. Is this understanding right 
+
+
+2. I find that the model that generated the dataset is not the best performing model, in contrast to Kang & Cohen's findings:
+
+- Case examined: 20 items, 500 sample size, low ability
+
+- When data is generated by 1PL: AIC, BIC and G-square are not the lowest for 1PL for all 50 iterations. 1PL is the best performing for all 50 iterations for log likelihood
+
+- When data is generated by 2PL: AIC, LL and G-square are not the lowest for 1PL for all 50 iterations. 2PL is the best performing dataset for all 50 iterations for BIC
+
+- When data is generated by 3PL: BIC and LL are not the lowest for 1PL for all 50 iterations. AIC and G-sq is the best performing dataset for all 50 iterations for log likelihood
+
+
+
+```{r warning=T}
 # Iterate for 50 loops to see which model fits best
 # Data generated using 1PL, low ability
+# Generate parameters
 
 iter=50
 
 nitem=20
 sample.size=500
 
-a <- as.matrix(round(rlnorm(nitem, meanlog = 0, sdlog = 0.5),3), ncol=1) #lognormal
-b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
-c <- as.matrix(round(rbeta(nitem, shape1 = 5, shape2 = 17),3), ncol=1) #beta
-low_ability <- as.matrix(round(rnorm(sample.size, mean = -1, sd = 1),3), ncol=1) #normal
-med_ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
-high_ability <- as.matrix(round(rnorm(sample.size, mean = 1, sd = 1),3), ncol=1) #normal
+a <- as.matrix(round(rlnorm(20, meanlog = 0, sdlog = 1),3), ncol=1) #lognormal
+b <- as.matrix(round(rnorm(20, mean = 0, sd = 1),3), ncol=1) #normal
+c <- as.matrix(round(rbeta(20, shape1 = 5, shape2 = 17),3), ncol=1) #beta
+low_ability <- as.matrix(round(rnorm(1000, mean = -1, sd = 1),3), ncol=1) #normal
+med_ability <- as.matrix(round(rnorm(1000, mean = 0, sd = 1),3), ncol=1) #normal
+high_ability <- as.matrix(round(rnorm(1000, mean = 1, sd = 1),3), ncol=1) #normal
+
+c1<- matrix(rep( 0, len=20), ncol = 1)
+a1<- matrix(rep( 1, len=20), ncol = 1)
 
 
+
+  
+
+```
+
+
+#### For 1PL model paramters
+```{r warning=T}
+
+# Generate datasets, low ability
+
+dat_1PL = fun_simulate_data(40, 1000, "1PL", a1, b,c1, med_ability)
+
+#dat_1PL= fun_simulate_1PL(nitem, sample.size,  a, b, low_ability)
+
+# Create vectors to record results from iterations
 bestfit_1PL= data.frame(iteration=1:50, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
 
 
+# Create vectors to record final summary
+
+
 	for (i in 1:iter){
-
-	  # Generate datasets, low ability
-dat_1PL= fun_simulate_1PL(nitem, sample.size,  a, b, low_ability)
-dat_2PL= fun_simulate_2PL(nitem, sample.size,  a, b, low_ability)
-dat_3PL= fun_simulate_3PL(nitem, sample.size,  a, b, c, low_ability)
-
-
 #Estimate
 model1PL <- mirt(data=dat_1PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
-model2PL <- mirt(data=dat_2PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
-model3PL <- mirt(data=dat_3PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
+model2PL <- mirt(data=dat_1PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
+model3PL <- mirt(data=dat_1PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
+
 
 compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
 
 if((which.min(compare$AIC))==1) {
   bestfit_1PL[i,2]=1
 }
+	
+
+if((which.min(compare$BIC))==1) {
+  bestfit_1PL[i,3]=1
 }
 
-#Track which model fits best
+if((which.min(compare$`G-sq`))==1) {
+  bestfit_1PL[i,4]=1
+}
+
+if((which.max(compare$LL))==1) {
+  bestfit_1PL[i,5]=1
+}
 
 	}
 
+summary_1PL = bestfit_1PL %>%
+   replace(is.na(.), 0) %>%
+  select(-"iteration") %>%
+   summarise_all(funs(sum)) %>%
+  mutate(model= "1PL")
 
-coef(model1PL) %>%
-		magrittr::extract(-length(.)) %>%
-		do.call(rbind, .) %>%
-		as_tibble()
+summary_1PL
 
+
+```
+
+#### Data generated using 2PL
+
+```{r warning=T}
+
+# Generate datasets, low ability
+nitem=40
+sample.size=1000
+dat_2PL = fun_simulate_data(nitem, sample.size, "2PL", a, b,c1, low_ability)
+
+
+
+# Create vectors to record results from iterations
+bestfit_2PL= data.frame(iteration=1:50, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
+
+	for (i in 1:iter){
+#Estimate
+model1PL <- mirt(data=dat_2PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
+model2PL <- mirt(data=dat_2PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
+model3PL <- mirt(data=dat_2PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
+
+compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
+
+if((which.min(compare$AIC))==2) {
+  bestfit_2PL[i,2]=1
+}
+	
+
+if((which.min(compare$BIC))==2) {
+  bestfit_2PL[i,3]=1
+}
+
+if((which.min(compare$`G-sq`))==2) {
+  bestfit_2PL[i,4]=1
+}
+
+if((which.max(compare$LL))==2) {
+  bestfit_2PL[i,5]=1
+}
+
+}
+
+summary_2PL = bestfit_2PL %>%
+   replace(is.na(.), 0) %>%
+  select(-"iteration") %>%
+   summarise_all(funs(sum)) %>%
+  mutate(model= "2PL")
+
+summary_2PL
 
 ```
 
 
 
 
-```{r}
+```{r warning=T}
+# Generate datasets, low ability
+dat_3PL = fun_simulate_data(nitem, sample.size, "3PL", a, b,c, low_ability)
 
-# Call the function for Study 2
-nitem=20
-sample.size=500
+# Create vectors to record results from iterations
+bestfit_3PL= data.frame(iteration=1:50, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
 
+for (i in 1:iter){
+#Estimate
+model1PL <- mirt(data=dat_3PL, 1, itemtype='Rasch', SE=F, verbose=FALSE)
+model2PL <- mirt(data=dat_3PL, 1, itemtype='2PL', SE=F, verbose=FALSE)
+model3PL <- mirt(data=dat_3PL, 1, itemtype='3PL', SE=F, verbose=FALSE)
 
-a <- as.matrix(round(rlnorm(nitem, meanlog = 0, sdlog = 1),3), ncol=1) #lognormal
-b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
-c <- as.matrix(round(rbeta(nitem, shape1 = 5, shape2 = 17),3), ncol=1) #beta
-ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
+compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
 
-  
+if((which.min(compare$AIC))==3) {
+  bestfit_3PL[i,2]=1
+}
+	
 
+if((which.min(compare$BIC))==3) {
+  bestfit_3PL[i,3]=1
+}
+
+if((which.min(compare$`G-sq`))==3) {
+  bestfit_3PL[i,4]=1
+}
+
+if((which.max(compare$LL))==3) {
+  bestfit_3PL[i,5]=1
+}
+
+}
+
+summary_3PL = bestfit_3PL %>%
+   replace(is.na(.), 0) %>%
+  select(-"iteration") %>%
+   summarise_all(funs(sum)) %>%
+  mutate(model= "3PL")
+
+summary_3PL
 
 ```
+
 
 
