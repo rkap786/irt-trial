@@ -1,27 +1,31 @@
----
-title: "IRT trial code"
-author: "radhika"
-date: "11/29/2020"
-output: github_document
----
+IRT trial code
+================
+radhika
+11/29/2020
 
-```{r}
+``` r
 #HTML file with output details is here:
 # https://rpubs.com/rkap786/701341
-
 ```
 
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r}
-
-
+``` r
 #install.packages("dplyr")
 library(tidyr)
 library(dplyr)
+```
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
 library(stringr) 
 library(ggplot2)
 library(readr)
@@ -31,36 +35,57 @@ library(knitr)
 
 #install.packages("psych")
 library(psych)
+```
+
+    ## 
+    ## Attaching package: 'psych'
+
+    ## The following objects are masked from 'package:ggplot2':
+    ## 
+    ##     %+%, alpha
+
+``` r
 library(mirt)
+```
 
+    ## Loading required package: stats4
 
+    ## Loading required package: lattice
+
+``` r
 #install.packages("lmtest")
 library(lmtest)
+```
 
+    ## Loading required package: zoo
+
+    ## 
+    ## Attaching package: 'zoo'
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     as.Date, as.Date.numeric
+
+``` r
 setwd("~/Documents/Stanford work/IRT/irt-trial")
 ```
 
-
-
 ### Simulate dataset
 
-
-```{r}
-
-
+``` r
  #Set the seed and generate the parameters
 
 ##function to generate dataset
  
 fun_simulate_data= function(nitem, sample.size, model,a, b,c, ability) {
  #Simulate response data 
- 	if (model == "1PL"){
+    if (model == "1PL"){
  dat <- simdata(a = a, 
                 d = b, 
                 N = sample.size, 
                 itemtype = '2PL', 
                 Theta = ability)
- 	}
+    }
  
  if (model == "2PL"){
  dat <- simdata(a = a, 
@@ -82,13 +107,11 @@ fun_simulate_data= function(nitem, sample.size, model,a, b,c, ability) {
   return(dat)
   
  }
- 
-
 ```
 
 ### Function for fit
 
-```{r}
+``` r
 fun_model_fit= function(model1PL, model2PL, model3PL) {
   
 #extract fit statistics
@@ -119,22 +142,13 @@ parameters=rbind(parameters, parameters1, parameters2)
 
 return(parameters)
 }
-
 ```
-
 
 ### Compare models (Table 9)
 
-This is done for models with
-- Low ability
-- 40 items, 500 respondents 
+This is done for models with - Low ability - 40 items, 500 respondents
 
-
-
-
-
-```{r}
-
+``` r
 ### Kang-Cohen's parameters (code from Ben's R files)
 
 # a <- as.matrix(round(rlnorm(20, meanlog = 0, sdlog = 1),3), ncol=1) #lognormal
@@ -163,13 +177,9 @@ c <- c[!is.na(c)]
 # Empty variables 
  c1<- matrix(rep( 0, len=20), ncol = 1)
  a1<- matrix(rep( 1, len=20), ncol = 1)
-
-
 ```
 
-
-
-```{r warning=T}
+``` r
 # Iterate for 50 loops to see which model fits best
 # Set parameters
 
@@ -182,20 +192,17 @@ sample.size=500
 low_ability <- as.matrix(round(rnorm(sample.size, mean = -1, sd = 1),3), ncol=1) #normal
 #med_ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
 #high_ability <- as.matrix(round(rnorm(sample.size, mean = 1, sd = 1),3), ncol=1) #normal
-
 ```
 
-
 #### For 1PL DGM, low ability
-```{r warning=T}
 
-
+``` r
 # Create vectors to record results from iterations
 bestfit_1PL= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
 
 
 # Create vectors to record final summary
-	for (i in 1:iter){
+    for (i in 1:iter){
 dat_1PL = fun_simulate_data(nitem, sample.size, "1PL", a1, b,c1, low_ability)
 
 #Estimate
@@ -213,8 +220,25 @@ bestfit_1PL[i,4]=which.min(compare$`G-sq`)
 bestfit_1PL[i,5]=which.max(compare$LL)
 
 }
+```
 
+    ## EM cycles terminated after 500 iterations.
 
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+
+    ## EM cycles terminated after 500 iterations.
+
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+
+``` r
 # 
 # summary_1PL = bestfit_1PL %>%
 #    replace(is.na(.), 0) %>%
@@ -230,22 +254,17 @@ df_BIC$model_selected = row.names(df_BIC)
 
 results1 = merge(df_AIC,df_BIC,by="model_selected", all = T)
 results1$DGM = "1PL"
-
-
-  
-
 ```
 
 #### Data generated using 2PL
 
-```{r warning=T}
-
+``` r
 # Generate datasets, low ability
 
 # Create vectors to record results from iterations
 bestfit_2PL= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
 
-	for (i in 1:iter){
+    for (i in 1:iter){
 #Estimate
 dat_2PL = fun_simulate_data(nitem, sample.size, "2PL", a, b,c1, low_ability)
 model1PL <- mirt(data=dat_2PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
@@ -260,9 +279,55 @@ bestfit_2PL[i,4]=which.min(compare$`G-sq`)
 bestfit_2PL[i,5]=which.max(compare$LL)
 
 }
+```
 
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+    
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
 
+    ## EM cycles terminated after 500 iterations.
 
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+
+    ## EM cycles terminated after 500 iterations.
+
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+    
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+    
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+
+    ## EM cycles terminated after 500 iterations.
+
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+    
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+    
+    ## Warning: Could not invert information matrix; model likely is not empirically
+    ## identified.
+
+``` r
 # 
 # summary_1PL = bestfit_1PL %>%
 #    replace(is.na(.), 0) %>%
@@ -288,14 +353,11 @@ df_BIC$model_selected = row.names(df_BIC)
 
 results2 = merge(df_AIC,df_BIC,by="model_selected", all = T)
 results2$DGM = "2PL"
-
-
 ```
-
 
 #### Data generated using 3PL
 
-```{r warning=T}
+``` r
 # Generate datasets, low ability
 
 
@@ -316,9 +378,48 @@ bestfit_3PL[i,4]=which.min(compare$`G-sq`)
 bestfit_3PL[i,5]=which.max(compare$LL)
 
 }
+```
 
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
+    ## EM cycles terminated after 500 iterations.
 
-
+``` r
 df_AIC=data.frame(AIC_count=unclass(table(bestfit_3PL$AIC)))
 df_AIC$model_selected = row.names(df_AIC)
 
@@ -334,13 +435,16 @@ results3$DGM = "3PL"
 
 results = rbind(results1, results2, results3)
 results
-
-
 ```
 
+    ##   model_selected AIC_count BIC_count DGM
+    ## 1              1        50        50 1PL
+    ## 2              2        50        50 2PL
+    ## 3              1        NA        48 3PL
+    ## 4              2         1         2 3PL
+    ## 5              3        49        NA 3PL
 
 ### Summary
 
-Results for low ability, 40 items, 500 sample size above. Results from Kang-Cohen below
-![Table 9](./Kang-Cohen table 9.png) 
-
+Results for low ability, 40 items, 500 sample size above. Results from
+Kang-Cohen below ![Table 9](./Kang-Cohen%20table%209.png)
