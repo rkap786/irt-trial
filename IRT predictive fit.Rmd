@@ -2,12 +2,8 @@
 title: "Replicate Ben's IRT paper"
 author: "radhika"
 date: "1/21/2021"
-output: html_document
+output: github_document
 ---
-
-
-
-
 
 
 
@@ -38,38 +34,213 @@ library(lmtest)
 ```
 
 
-### Generate data
-nitem=50
-sample.size=1000
+### Generate data - function
 
-a <- as.matrix(round(rlnorm(nitem, meanlog = 0, sdlog = 1),3), ncol=1) #lognormal
-b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
-c <- as.matrix(round(rbeta(nitem, shape1 = 5, shape2 = 17),3), ncol=1) #beta
+```{r}
+fun_simulate_data= function(nitem, sample.size, model) {
 ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1)
-  
-dat <- as.data.frame(simdata(a = a, 
+
+#Simulate response data 
+ 	if (model == "1PL"){
+a<- matrix(rep( 1, len=nitem), ncol = 1)
+c<- matrix(rep( 0, len=nitem), ncol = 1)
+b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
+
+ dat <- simdata(a = a, 
+                d = b, 
+                N = sample.size, 
+                itemtype = '2PL', 
+                Theta = ability)
+ 	}
+ 
+ if (model == "2PL"){
+a <- as.matrix(round(rlnorm(20, meanlog = 0, sdlog = 0.5),3), ncol=1) #lognormal
+c<- matrix(rep( 0, len=nitem), ncol = 1)
+b <- as.matrix(round(rnorm(20, mean = 0, sd = 1),3), ncol=1) #normal
+
+ dat <- simdata(a = a, 
+                d = b, 
+                N = sample.size, 
+                itemtype = '2PL', 
+                Theta = ability)
+ }
+ 
+ if (model == "3PL"){
+a <- as.matrix(round(rlnorm(20, meanlog = 0, sdlog = 0.5),3), ncol=1) #lognormal
+c <- as.matrix(round(rbeta(20, shape1 = 5, shape2 = 17),3), ncol=1) #beta
+b <- as.matrix(round(rnorm(20, mean = 0, sd = 1),3), ncol=1) #normal
+
+ dat <- simdata(a = a, 
                 d = b, 
                 N = sample.size, 
                 itemtype = '3PL', 
                 guess = c, 
-                Theta = ability))
+                Theta = ability)
+ }
+
+  return(dat)
+  
+ }
+
+```
+
+
+### Call command to generate data - 1PL
+
+```{r}
+
+#50 items, 1000 respondents
+set.seed(1234)
+nitem=50
+sample.size=1000
+
+ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1)
+a<- matrix(rep( 1, len=nitem), ncol = 1)
+c<- matrix(rep( 0, len=nitem), ncol = 1)
+b <- as.matrix(round(rnorm(nitem, mean = 0, sd = 1),3), ncol=1) #normal
+
+#Simulate response data 
+
+ dat <- simdata(a = a, 
+                d = b, 
+                N = sample.size, 
+                itemtype = '2PL', 
+                Theta = ability)
+ 
+ 
+```
+
+
+```{r}
+#Check if dataset is correctly generated
+
+# model1PL <- mirt(data=dat, 1,itemtype='Rasch', SE=FALSE, verbose=FALSE)
+# coef = as.data.frame(coef(model1PL, simplify=T)$items[,2]) %>%
+#   tibble::rownames_to_column(., "Item no") %>%
+#   mutate("b"= b) %>%
+#   rename(b_est= "coef(model1PL, simplify = T)$items[, 2]")
+# 
+# plot(coef$b,coef$b_est)
+```
+
 
 
 ### break into test and train
-dat$id <- 1:nrow(dat)
-dat_train <- dat %>% 
-    dplyr::sample_frac(.75)
-dat_test  <- dplyr::anti_join(dat, dat_train, by = 'id')
+
+```{r}
+#dat$id <- 1:nrow(dat)
+
+#Generate a matrix to drop some variables from items at random
+
+dat_mr= as.data.frame(lapply(as.data.frame(a1), function(cc) cc[ sample(c(TRUE, NA), prob = c(0.8, 0.2), size = length(cc), replace = TRUE) ]))
+
+m0=matrix(rbinom(nitem*sample.size, 1, .9), ncol=nitem)
+#summary(m0)
+
+m0_na_train <- ifelse(m0==0,NA,m0)
+# m0 has 10% of values randomly set to 0. These values are set to missing
+m0_na_test <- ifelse(m0==1,NA,m0)
+
+# Train dataset
+dat_mr_train= dat * m0_na_train  # Train dataset - 10% values are set to NA
+dat_mr_test= dat * m0_na_test # Test dataset - 90% of values are set to NA
+
+
+```
+
 
 
 ### Fit 1PL, 2PL, 3PL to train
-#estimate IRT parameters
-model1PL <- mirt(data=dat_train, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
-model2PL <- mirt(data=dat_train, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
-model3PL <- mirt(data=dat_train, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
+#estimate IRT parameters and theta
+
+```{r}
+#Estimate item parameters
+# model1PL <- mirt(data=dat_mr, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
+# model2PL <- mirt(data=dat_mr, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
+# model3PL <- mirt(data=dat_mr, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
+
+est <- function(resp, model) {
+  mod <- mirt(data=resp, 1, itemtype = model) #model = Rasch, 2PL or 3PL
+  #mod <- mirt(data=dat, 1, itemtype = "Rasch") #model = Rasch, 2PL or 3PL
+  co <- coef(mod)
+  co <- co[-length(co)]#why do i do this?
+  pars <- do.call("rbind", co)
+  theta <- fscores(mod, method = "ML", full.scores = TRUE)  ##note: this is where the ability scoring happens. we'll talk about the details of this component next week.
+  nc <- ncol(theta)
+  if (nc == 1) 
+    theta <- as.numeric(theta) else theta <- theta[, ncol(resp) + 1]
+  list(theta = theta, pars_diff = pars[, 2], pars_discrim = pars[, 1], pars_guess=pars[,3])
+}
+
+est_1PL = est(dat, "Rasch")
+est_1PL_mr = est(dat_mr_train, "Rasch")
+
+est_2PL = est(dat, "2PL")
+est_2PL_mr = est(dat_mr_train, "2PL")
+
+est_3PL = est(dat, "3PL")
+est_3PL_mr = est(dat_mr_train, "3PL")
 
 
-### Fit AIC/ BIC
+```
+
+
+
+### Get probability of correct response for the TEST response matrix
+```{r}
+get_p <- function(est) {
+  n1 <- length(est$theta)
+  n2 <- length(est$pars_diff)
+  th <- matrix(est$theta, n1, n2, byrow = FALSE)
+  b_est <- matrix(est$pars_diff, n1, n2, byrow = TRUE)
+  a_est <- matrix(est$pars_discrim, n1, n2, byrow = TRUE)
+  c_est <- matrix(est$pars_guess, n1, n2, byrow = TRUE)
+  kern <- exp(a_est*(th + b_est))
+  c_est + (1-c_est)*(kern/(1 + kern))
+}
+
+p_1PL <- get_p(est_1PL)
+
+# Get IRT parameters for the training dataset - 1PL , 2PL, 3 PL
+p_est_1PL <- get_p(est_1PL_mr)
+p_est_2PL <- get_p(est_2PL_mr)
+p_est_3PL <- get_p(est_3PL_mr)
+
+
+# Only keep the probability set for the values that were missing
+try = ifelse(is.na(m0_na_train),1,0)
+diff_1PL =
+
+  
+
+
+```
+
+1. Get probability of response for all the NAs in train dataset
+2. Calculate log likelihood
+
+
+```{r}
+
+```
+
+
+### Compare model performance to test
+```{r}
+
+elplMR_MD <- function(p_model, p_true){
+	p_model_correct <- p_model^p_true * (1 - p_model)^(1 - p_true)
+	sum(log(p_model_correct))
+}
+
+
+results = rbind(c(model = "1PL", LL=round(elplMR_MD(p_1PL,p_est_1PL),3)),
+                c(model = "2PL", LL=round(elplMR_MD(p_2PL,p_est_2PL),3)),
+                c(model = "3PL", LL=round(elplMR_MD(p_3PL,p_est_3PL),3)))
+
+results
+```
+
 
 
 
