@@ -18,7 +18,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 
-
+#install.packages("styler")
+library(styler)
 #install.packages("dplyr")
 library(tidyr)
 library(dplyr)
@@ -83,7 +84,6 @@ fun_simulate_data= function(nitem, sample.size, model,a, b,c, ability) {
   
  }
  
-
 ```
 
 ### Function for fit
@@ -123,11 +123,70 @@ return(parameters)
 ```
 
 
+
+
+#### Store results from fitting 1PL, 2PL and 3PL in one vector
+```{r warning=T}
+
+fun_result_compile= function(iter, nitem, sample.size, a, b, c, ability) {
+
+# Create vectors to record results from iterations
+bestfit= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
+models <- c("1PL", "2PL", "3PL")
+results = data.frame()
+# Empty variables 
+ c_null<- matrix(rep( 0, len=nitem), ncol = 1)
+ a_null<- matrix(rep( 1, len=nitem), ncol = 1)
+
+for (model in models) {
+
+for (i in 1:iter){
+  
+a_use = case_when(model=="1PL" ~  a_null,
+          model=="2PL" ~  a,
+          model=="3PL" ~  a)
+
+c_use = case_when(model=="1PL" ~  c_null,
+          model=="2PL" ~  c_null,
+          model=="3PL" ~  c)
+
+data = fun_simulate_data(nitem, sample.size, "1PL", a_use, b,c_use, ability)
+
+#Estimate
+model1PL <- mirt(data, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
+model2PL <- mirt(data, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
+model3PL <- mirt(data, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
+
+compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
+
+bestfit[i,2]=which.min(compare$AIC)
+bestfit[i,3]=which.min(compare$BIC)
+bestfit[i,4]=which.min(compare$`G-sq`)
+bestfit[i,5]=which.max(compare$LL)
+
+}
+
+
+df_AIC=data.frame(AIC_count=unclass(table(bestfit$AIC)))
+df_AIC$model_selected = row.names(df_AIC)
+
+df_BIC=data.frame(BIC_count=unclass(table(bestfit$BIC)))
+df_BIC$model_selected = row.names(df_BIC)
+
+temp=data.frame()
+temp = merge(df_AIC,df_BIC,by="model_selected", all = T)
+temp$DGM = model
+results=rbind(results, temp)
+
+}
+return(results)
+}  
+
+```
+
+
 ### Compare models (Table 9)
 
-This is done for models with
-- Low ability
-- 40 items, 500 respondents 
 
 
 
@@ -161,13 +220,17 @@ c <- c[!is.na(c)]
 
 
 # Empty variables 
- c1<- matrix(rep( 0, len=20), ncol = 1)
- a1<- matrix(rep( 1, len=20), ncol = 1)
+# c1<- matrix(rep( 0, len=20), ncol = 1)
+# a1<- matrix(rep( 1, len=20), ncol = 1)
 
 
 ```
 
 
+
+This is done for models with
+- Medium ability
+- 40 items, 1000 respondents 
 
 ```{r warning=T}
 # Iterate for 50 loops to see which model fits best
@@ -176,13 +239,29 @@ c <- c[!is.na(c)]
 iter=50
 
 nitem=40
-sample.size=500
+sample.size=1000
 
 
 low_ability <- as.matrix(round(rnorm(sample.size, mean = -1, sd = 1),3), ncol=1) #normal
-#med_ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
-#high_ability <- as.matrix(round(rnorm(sample.size, mean = 1, sd = 1),3), ncol=1) #normal
+med_ability <- as.matrix(round(rnorm(sample.size, mean = 0, sd = 1),3), ncol=1) #normal
+high_ability <- as.matrix(round(rnorm(sample.size, mean = 1, sd = 1),3), ncol=1) #normal
 
+```
+
+### Medium ability
+
+```{r}
+
+# Medium ability, 40 items, 1000 sample size, 50 iterations
+results1 = fun_result_compile(iter, nitem, sample.size, a, b, c, med_ability)
+
+# Medium ability, 40 items, 1000 sample size, 50 iterations - flip the difficulty sign
+results1 = fun_result_compile(iter, nitem, sample.size, a, b, c, med_ability)
+
+
+fun_result_compile= function(iter, nitem, sample.size, a, b, c, ability)
+
+  
 ```
 
 
@@ -196,23 +275,23 @@ bestfit_1PL= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
 
 # Create vectors to record final summary
 	for (i in 1:iter){
-dat_1PL = fun_simulate_data(nitem, sample.size, "1PL", a1, b,c1, low_ability)
+dat_1PL = fun_simulate_data(nitem, sample.size, "1PL", a1, b,c1, med_ability)
 
 #Estimate
 model1PL <- mirt(data=dat_1PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
 model2PL <- mirt(data=dat_1PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
 model3PL <- mirt(data=dat_1PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
 
-
 compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
-
 
 bestfit_1PL[i,2]=which.min(compare$AIC)
 bestfit_1PL[i,3]=which.min(compare$BIC)
 bestfit_1PL[i,4]=which.min(compare$`G-sq`)
 bestfit_1PL[i,5]=which.max(compare$LL)
 
+
 }
+
 
 
 # 
@@ -221,6 +300,7 @@ bestfit_1PL[i,5]=which.max(compare$LL)
 #   select(-"iteration") %>%
 #    summarise_all(funs(sum)) %>%
 #   mutate(model= "1PL")
+
 
 df_AIC=data.frame(AIC_count=unclass(table(bestfit_1PL$AIC)))
 df_AIC$model_selected = row.names(df_AIC)
@@ -247,7 +327,8 @@ bestfit_2PL= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
 
 	for (i in 1:iter){
 #Estimate
-dat_2PL = fun_simulate_data(nitem, sample.size, "2PL", a, b,c1, low_ability)
+
+dat_2PL = fun_simulate_data(nitem, sample.size, "2PL", a, b,c1, med_ability)
 model1PL <- mirt(data=dat_2PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
 model2PL <- mirt(data=dat_2PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
 model3PL <- mirt(data=dat_2PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
@@ -303,11 +384,10 @@ results2$DGM = "2PL"
 bestfit_3PL= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
 
 for (i in 1:iter){
-dat_3PL = fun_simulate_data(nitem, sample.size, "3PL", a, b,c, low_ability)
-#Estimate
-model1PL <- mirt(data=dat_3PL, 1, itemtype='Rasch', SE=F, verbose=FALSE)
-model2PL <- mirt(data=dat_3PL, 1, itemtype='2PL', SE=F, verbose=FALSE)
-model3PL <- mirt(data=dat_3PL, 1, itemtype='3PL', SE=F, verbose=FALSE)
+dat_3PL = fun_simulate_data(nitem, sample.size, "3PL", a, b,c, med_ability)
+model1PL <- mirt(data=dat_3PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
+model2PL <- mirt(data=dat_3PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
+model3PL <- mirt(data=dat_3PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
 
 compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
 bestfit_3PL[i,2]=which.min(compare$AIC)
@@ -341,6 +421,6 @@ results
 
 ### Summary
 
-Results for low ability, 40 items, 500 sample size above. Results from Kang-Cohen below
+Results for med ability, 40 items, 500 sample size above. Results from Kang-Cohen below
 ![Table 9](./Kang-Cohen table 9.png) 
 
