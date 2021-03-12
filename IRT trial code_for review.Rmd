@@ -131,17 +131,16 @@ return(parameters)
 fun_result_compile= function(iter, nitem, sample.size, a, b, c, ability) {
 
 # Create vectors to record results from iterations
-bestfit= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
+
 models <- c("1PL", "2PL", "3PL")
 results = data.frame()
 # Empty variables 
  c_null<- matrix(rep( 0, len=nitem), ncol = 1)
  a_null<- matrix(rep( 1, len=nitem), ncol = 1)
 
+ 
 for (model in models) {
-
-for (i in 1:iter){
-  
+bestfit= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
 a_use = case_when(model=="1PL" ~  a_null,
           model=="2PL" ~  a,
           model=="3PL" ~  a)
@@ -150,7 +149,11 @@ c_use = case_when(model=="1PL" ~  c_null,
           model=="2PL" ~  c_null,
           model=="3PL" ~  c)
 
-data = fun_simulate_data(nitem, sample.size, "1PL", a_use, b,c_use, ability)
+for (i in 1:iter){
+  
+
+data = fun_simulate_data(nitem=40, sample.size=500, model, a_use, b,c_use, ability)
+
 
 #Estimate
 model1PL <- mirt(data, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
@@ -255,165 +258,16 @@ high_ability <- as.matrix(round(rnorm(sample.size, mean = 1, sd = 1),3), ncol=1)
 # Medium ability, 40 items, 1000 sample size, 50 iterations
 results1 = fun_result_compile(iter, nitem, sample.size, a, b, c, med_ability)
 
-# Medium ability, 40 items, 1000 sample size, 50 iterations - flip the difficulty sign
-results1 = fun_result_compile(iter, nitem, sample.size, a, b, c, med_ability)
+# Medium ability, 40 items, 1000 sample size, 50 iterations 
+results2 = fun_result_compile(iter, nitem, sample.size, a, b, c, low_ability)
 
 
-fun_result_compile= function(iter, nitem, sample.size, a, b, c, ability)
+# Medium ability, 40 items, 1000 sample size, 50 iterations - low ability, -ve b
+results3 = fun_result_compile(iter, nitem, sample.size, a, -b, c, low_ability)
 
-  
-```
+# Medium ability, 40 items, 500 sample size, 50 iterations 
+results4 = fun_result_compile(iter=50, nitem=40, 500, a, b, c, med_ability)
 
-
-#### For 1PL DGM, low ability
-```{r warning=T}
-
-
-# Create vectors to record results from iterations
-bestfit_1PL= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
-
-
-# Create vectors to record final summary
-	for (i in 1:iter){
-dat_1PL = fun_simulate_data(nitem, sample.size, "1PL", a1, b,c1, med_ability)
-
-#Estimate
-model1PL <- mirt(data=dat_1PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
-model2PL <- mirt(data=dat_1PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
-model3PL <- mirt(data=dat_1PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
-
-compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
-
-bestfit_1PL[i,2]=which.min(compare$AIC)
-bestfit_1PL[i,3]=which.min(compare$BIC)
-bestfit_1PL[i,4]=which.min(compare$`G-sq`)
-bestfit_1PL[i,5]=which.max(compare$LL)
-
-
-}
-
-
-
-# 
-# summary_1PL = bestfit_1PL %>%
-#    replace(is.na(.), 0) %>%
-#   select(-"iteration") %>%
-#    summarise_all(funs(sum)) %>%
-#   mutate(model= "1PL")
-
-
-df_AIC=data.frame(AIC_count=unclass(table(bestfit_1PL$AIC)))
-df_AIC$model_selected = row.names(df_AIC)
-
-df_BIC=data.frame(BIC_count=unclass(table(bestfit_1PL$BIC)))
-df_BIC$model_selected = row.names(df_BIC)
-
-results1 = merge(df_AIC,df_BIC,by="model_selected", all = T)
-results1$DGM = "1PL"
-
-
-  
-
-```
-
-#### Data generated using 2PL
-
-```{r warning=T}
-
-# Generate datasets, low ability
-
-# Create vectors to record results from iterations
-bestfit_2PL= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
-
-	for (i in 1:iter){
-#Estimate
-
-dat_2PL = fun_simulate_data(nitem, sample.size, "2PL", a, b,c1, med_ability)
-model1PL <- mirt(data=dat_2PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
-model2PL <- mirt(data=dat_2PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
-model3PL <- mirt(data=dat_2PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
-
-compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
-
-bestfit_2PL[i,2]=which.min(compare$AIC)
-bestfit_2PL[i,3]=which.min(compare$BIC)
-bestfit_2PL[i,4]=which.min(compare$`G-sq`)
-bestfit_2PL[i,5]=which.max(compare$LL)
-
-}
-
-
-
-# 
-# summary_1PL = bestfit_1PL %>%
-#    replace(is.na(.), 0) %>%
-#   select(-"iteration") %>%
-#    summarise_all(funs(sum)) %>%
-#   mutate(model= "1PL")
-# 
-# fit = apply(bestfit_2PL,MARGIN=2,table)
-# 
-# summary_2PL = cbind(model= "2PL", 
-#                     AIC=as.numeric(fit$AIC[1]),
-#                     BIC=as.numeric(fit$BIC[1]),
-#                     LL=as.numeric(fit$LL[1]))
-# 
-# summary= rbind(summary_1PL, summary_2PL)
-
-
-df_AIC=data.frame(AIC_count=unclass(table(bestfit_2PL$AIC)))
-df_AIC$model_selected = row.names(df_AIC)
-
-df_BIC=data.frame(BIC_count=unclass(table(bestfit_2PL$BIC)))
-df_BIC$model_selected = row.names(df_BIC)
-
-results2 = merge(df_AIC,df_BIC,by="model_selected", all = T)
-results2$DGM = "2PL"
-
-
-```
-
-
-#### Data generated using 3PL
-
-```{r warning=T}
-# Generate datasets, low ability
-
-
-# Create vectors to record results from iterations
-bestfit_3PL= data.frame(iteration=1:iter, "AIC"=0, "BIC"=0, "G-sq"=0, "LL"=0)
-
-for (i in 1:iter){
-dat_3PL = fun_simulate_data(nitem, sample.size, "3PL", a, b,c, med_ability)
-model1PL <- mirt(data=dat_3PL, 1, itemtype='Rasch', SE=TRUE, verbose=FALSE)
-model2PL <- mirt(data=dat_3PL, 1, itemtype='2PL', SE=TRUE, verbose=FALSE)
-model3PL <- mirt(data=dat_3PL, 1, itemtype='3PL', SE=TRUE, verbose=FALSE)
-
-compare = as.data.frame(fun_model_fit(model1PL, model2PL, model3PL))
-bestfit_3PL[i,2]=which.min(compare$AIC)
-bestfit_3PL[i,3]=which.min(compare$BIC)
-bestfit_3PL[i,4]=which.min(compare$`G-sq`)
-bestfit_3PL[i,5]=which.max(compare$LL)
-
-}
-
-
-
-df_AIC=data.frame(AIC_count=unclass(table(bestfit_3PL$AIC)))
-df_AIC$model_selected = row.names(df_AIC)
-
-
-
-
-df_BIC=data.frame(BIC_count=unclass(table(bestfit_3PL$BIC)))
-df_BIC$model_selected = row.names(df_BIC)
-
-results3 = merge(df_AIC,df_BIC,by="model_selected", all = T)
-results3$DGM = "3PL"
-
-
-results = rbind(results1, results2, results3)
-results
 
 
 ```

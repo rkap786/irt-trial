@@ -233,7 +233,7 @@ return(results)
 #50 items, 1000 respondents
 nitem=20
 sample.size=500
-iter=50
+iter=500
 
 c1=0
 c2=0
