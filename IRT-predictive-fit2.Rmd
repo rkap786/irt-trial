@@ -259,6 +259,7 @@ c <- as.matrix(rbeta(nitem, shape1 = 20, shape2 = 80), ncol=1) #beta
 
 for (i in 1:iter){
 result1 = predict_fit_mr(nitem,sample.size, model = "3PL", a,b,c,ability )
+print(result1)
 max = which.max(result1[,2])
 if(max==1) {c1=c1+1}
 if(max==2) {c2=c2+1}
