@@ -200,7 +200,7 @@ get_p_true <- function(a,b,c,ability) {
 
 elplMR_MD <- function(p_model, p_true){
   p_model[p_model<0.0000001] =0.0000001 
-  p_true[p_true>0.999999] =0.999999
+  p_model[p_model>0.999999] =0.999999
 	p_model_correct <- (p_true* log(p_model) + (1 - p_true)* log(1 - p_model))
 	sum(p_model_correct, na.rm=T)
 }
@@ -309,7 +309,7 @@ This chuck runs the code above, and stores results for which model won
 #50 items, 1000 respondents
 nitem=40
 sample.size=500
-iter=50
+iter=10
 model="3PL"
 
 c1=0
