@@ -173,7 +173,6 @@ est <- function(mod) {
 
 ## Get estimated probability
 get_p <- function(est) {
-  
   n1 <- length(est$theta)
   n2 <- length(est$pars_diff)
   th <- matrix(est$theta, n1, n2, byrow = FALSE)
@@ -187,7 +186,7 @@ get_p <- function(est) {
 get_p_true <- function(a,b,c,ability) {
   ability <- as.matrix(rnorm(sample.size, mean = 0, sd = 1), ncol=1)
   n1 <- length(ability)
- n2 <- length(b)
+  n2 <- length(b)
   th <- matrix(ability, n1, n2, byrow = FALSE)
   b2 <- matrix(b, n1, n2, byrow = TRUE)
   a2 <- matrix(a, n1, n2, byrow = TRUE)
@@ -201,7 +200,8 @@ get_p_true <- function(a,b,c,ability) {
 
 elplMR_MD <- function(p_model, p_true){
   p_model[p_model<0.0000001] =0.0000001 
-	p_model_correct <- p_true* log(p_model) + (1 - p_true)* log(1 - p_model)
+  p_true[p_true>0.999999] =0.999999
+	p_model_correct <- (p_true* log(p_model) + (1 - p_true)* log(1 - p_model))
 	sum(p_model_correct, na.rm=T)
 }
 
@@ -216,17 +216,21 @@ elplMR_MD <- function(p_model, p_true){
 # check1=log(p_est_2PL^p_true * (1 - p_est_2PL)^(1 - p_true))
 
 
-sig = function(result) {
-  ll_1pl = result[1,2]
-  ll_2pl = result[2,2]
-  ll_3pl = result[3,2]
-  
-  stat_12 <- -2 * (ll_1pl-ll_2pl)
-  stat_23 <- -2 * (ll_2pl-ll_3pl)
-  stat_31 <- -2 * (ll_2pl-ll_3pl)
-  
-  
-}
+# sig = function(result) {
+# result = data.frame(result)
+# 
+# result = result %>%
+#     arrange(LL)
+#   
+#   
+#   ll_1 = result[1,2]
+#   ll_2 = result[2,2]
+#   
+#   model1PL
+#   stat <- -2 * (ll_1pl-ll_2pl)
+#   pval <- pchisq(stat, df = 3, lower.tail = FALSE)
+#   
+# }
 
 ```
 
@@ -305,7 +309,7 @@ This chuck runs the code above, and stores results for which model won
 #50 items, 1000 respondents
 nitem=40
 sample.size=500
-iter=500
+iter=50
 model="3PL"
 
 c1=0
@@ -320,8 +324,8 @@ ability <- as.matrix(rnorm(sample.size, mean = 0, sd = 1), ncol=1)
 # c <- as.matrix(rbeta(nitem, shape1 = 5, shape2 = 17), ncol=1) #beta
 
 for (i in 1:iter){
-result1 = predict_fit_mr(nitem,sample.size, model, a,b,c,ability )
-#print(result1)
+result1 = predict_fit_mr(nitem,sample.size, model="3PL", a,b,c,ability )
+print(result1)
 max = which.max(result1[,2])
 if(max==1) {c1=c1+1}
 if(max==2) {c2=c2+1}

@@ -198,7 +198,6 @@ est <- function(mod) {
 
 ## Get estimated probability
 get_p <- function(est) {
-  
   n1 <- length(est$theta)
   n2 <- length(est$pars_diff)
   th <- matrix(est$theta, n1, n2, byrow = FALSE)
@@ -212,7 +211,7 @@ get_p <- function(est) {
 get_p_true <- function(a,b,c,ability) {
   ability <- as.matrix(rnorm(sample.size, mean = 0, sd = 1), ncol=1)
   n1 <- length(ability)
- n2 <- length(b)
+  n2 <- length(b)
   th <- matrix(ability, n1, n2, byrow = FALSE)
   b2 <- matrix(b, n1, n2, byrow = TRUE)
   a2 <- matrix(a, n1, n2, byrow = TRUE)
@@ -226,7 +225,8 @@ get_p_true <- function(a,b,c,ability) {
 
 elplMR_MD <- function(p_model, p_true){
   p_model[p_model<0.0000001] =0.0000001 
-    p_model_correct <- p_true* log(p_model) + (1 - p_true)* log(1 - p_model)
+  p_true[p_true>0.999999] =0.999999
+    p_model_correct <- (p_true* log(p_model) + (1 - p_true)* log(1 - p_model))
     sum(p_model_correct, na.rm=T)
 }
 
@@ -241,17 +241,21 @@ elplMR_MD <- function(p_model, p_true){
 # check1=log(p_est_2PL^p_true * (1 - p_est_2PL)^(1 - p_true))
 
 
-sig = function(result) {
-  ll_1pl = result[1,2]
-  ll_2pl = result[2,2]
-  ll_3pl = result[3,2]
-  
-  stat_12 <- -2 * (ll_1pl-ll_2pl)
-  stat_23 <- -2 * (ll_2pl-ll_3pl)
-  stat_31 <- -2 * (ll_2pl-ll_3pl)
-  
-  
-}
+# sig = function(result) {
+# result = data.frame(result)
+# 
+# result = result %>%
+#     arrange(LL)
+#   
+#   
+#   ll_1 = result[1,2]
+#   ll_2 = result[2,2]
+#   
+#   model1PL
+#   stat <- -2 * (ll_1pl-ll_2pl)
+#   pval <- pchisq(stat, df = 3, lower.tail = FALSE)
+#   
+# }
 ```
 
 ## Run code chunks above
@@ -325,7 +329,7 @@ This chuck runs the code above, and stores results for which model won
 #50 items, 1000 respondents
 nitem=40
 sample.size=500
-iter=500
+iter=50
 model="3PL"
 
 c1=0
@@ -340,8 +344,8 @@ ability <- as.matrix(rnorm(sample.size, mean = 0, sd = 1), ncol=1)
 # c <- as.matrix(rbeta(nitem, shape1 = 5, shape2 = 17), ncol=1) #beta
 
 for (i in 1:iter){
-result1 = predict_fit_mr(nitem,sample.size, model, a,b,c,ability )
-#print(result1)
+result1 = predict_fit_mr(nitem,sample.size, model="3PL", a,b,c,ability )
+print(result1)
 max = which.max(result1[,2])
 if(max==1) {c1=c1+1}
 if(max==2) {c2=c2+1}
@@ -354,149 +358,257 @@ if(max==3) {c3=c3+1}
 }
 ```
 
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
-    ## EM cycles terminated after 500 iterations.
+    ##      model LL         
+    ## [1,] "1PL" "-1944.908"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1923.477"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1946.905"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1904.658"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1925.457"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1946.065"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1905.138"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1910.525"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-2066.735"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL        
+    ## [1,] "1PL" "-1941.28"
+    ## [2,] "2PL" "-Inf"    
+    ## [3,] "3PL" "-Inf"    
+    ##      model LL         
+    ## [1,] "1PL" "-1854.911"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1926.631"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1939.404"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1940.194"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1991.133"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1911.561"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1844.244"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1947.693"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1904.489"
+    ## [2,] "2PL" "-2072.989"
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1912.294"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1907.336"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1831.585"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1849.273"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1894.241"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1952.883"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1902.994"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1834.179"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1948.426"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1836.599"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1886.678"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1935.778"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1998.109"
+    ## [2,] "2PL" "-2016.716"
+    ## [3,] "3PL" "-2088.262"
+    ##      model LL         
+    ## [1,] "1PL" "-1866.167"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1913.153"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1882.562"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL       
+    ## [1,] "1PL" "-1868.1"
+    ## [2,] "2PL" "-Inf"   
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1954.569"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1841.688"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1817.217"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1986.238"
+    ## [2,] "2PL" "-2019.142"
+    ## [3,] "3PL" "-2138.938"
+    ##      model LL        
+    ## [1,] "1PL" "-1823.63"
+    ## [2,] "2PL" "-Inf"    
+    ## [3,] "3PL" "-Inf"    
+    ##      model LL         
+    ## [1,] "1PL" "-1909.533"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL    
+    ## [1,] "1PL" "-Inf"
+    ## [2,] "2PL" "-Inf"
+    ## [3,] "3PL" "-Inf"
+    ##      model LL         
+    ## [1,] "1PL" "-1980.569"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL        
+    ## [1,] "1PL" "-1886.86"
+    ## [2,] "2PL" "-Inf"    
+    ## [3,] "3PL" "-Inf"    
+    ##      model LL         
+    ## [1,] "1PL" "-1860.768"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1891.697"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1840.729"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1877.141"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"     
+    ##      model LL         
+    ## [1,] "1PL" "-1916.433"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
+
+    ## EM cycles terminated after 500 iterations.
+
+    ##      model LL         
+    ## [1,] "1PL" "-1945.199"
+    ## [2,] "2PL" "-Inf"     
+    ## [3,] "3PL" "-Inf"
 
 ``` r
 table = data.frame(
@@ -510,7 +622,7 @@ print(table)
 ```
 
     ##   DGM Wins_1PL Wins_2PL Wins_3PL
-    ## 1 3PL      500        0        0
+    ## 1 3PL       50        0        0
 
 ``` r
 #knitr::kable(table,
