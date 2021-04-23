@@ -45,7 +45,7 @@ est <- function(mod) {
   c_est <- matrix(est_1PL$pars_guess, n1, n2, byrow = TRUE)
   kern <- exp(a_est*(th + b_est))
   p=c_est + (1-c_est)*(kern/(1 + kern))
-  plot(th[,7],p[,7])
+  plot(th[,5],p[,5])
 
 
 
